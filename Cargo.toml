@@ -1,0 +1,15 @@
+[package]
+name = "snifos"
+version = "0.1.0"
+authors = ["alirez"]
+edition = "2018"
+
+[dependencies]
+nom = "^6.0"
+pcapng-writer = "^0.1.0"
+regex = "^1.4.3"
+lazy_static = "^1.4.0"
+chrono = "^0.4"
+thiserror = "^1.0"
+clap = "^2.33.3"
+anyhow = "^1.0.38"
