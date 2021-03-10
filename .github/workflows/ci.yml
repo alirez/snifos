@@ -12,10 +12,46 @@ env:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    # see proptest's ci
+    strategy:
+      matrix:
+        build:
+        - pinned
+        # - stable
+        # - beta
+        # - nightly
+        - macos
+        - win-msvc
+        - win-gnu
+
+        include:
+        - build: pinned
+          os: ubuntu-latest
+          rust: 1.50.0
+        - build: stable
+          os: ubuntu-latest
+          rust: stable
+        - build: beta
+          os: ubuntu-latest
+          rust: beta
+        - build: nightly
+          os: ubuntu-latest
+          rust: nightly
+        - build: macos
+          os: macos-latest
+          rust: nightly
+        - build: win-msvc
+          os: windows-2019
+          rust: nightly
+        - build: win-gnu
+          os: windows-2019
+          rust: nightly-x86_64-gnu
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout reopository
+      uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
     - name: Run tests
