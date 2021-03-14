@@ -1,0 +1,93 @@
+name: Release pre-built binaries
+
+on:
+  push:
+    branches: [ '*' ]
+# on: 
+#   push:
+#     tags:
+#       - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+        draft: true
+        prerelease: false
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+  build_linux:
+    runs-on: ubuntu-latest
+    needs: create_release
+    steps:
+    - uses: actions/checkout@v1
+    - name: build
+      run: cargo build --verbose --release
+    - name: stirp symbols and rename
+      run: |
+        strip target/release/snifos
+        cp target/release/snifos ./snifos
+        gzip snifos
+    - name: upload release asset (x86_64)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_path: ./snifos.gz
+        asset_name: snifos-x86_64-unknown-linux-gnu.gz
+        asset_content_type: application/gzip
+
+  build_windows:
+    runs-on: windows-latest
+    needs: create_release
+    steps:
+    - uses: actions/checkout@v1
+    - name: build
+      run: cargo build --verbose --release
+    - name: strip symbols
+      run: strip target/release/snifos.exe
+    - name: compress
+      run: Compress-Archive -LiteralPath target/release/snifos.exe -DestinationPath snifos.zip
+    - name: upload release asset (Windows)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_name: snifos.x86_64-pc-windows-msvc.zip
+        asset_path: snifos.zip
+        asset_content_type: application/zip
+
+  build_macos:
+    runs-on: macos-latest
+    needs: create_release
+    steps:
+    - uses: actions/checkout@v1
+    - name: build
+      run: cargo build --verbose --release
+    - name: strip symbols
+      run: strip target/release/snifos
+    - name: compress
+      run: gzip -c target/release/snifos > ./snifos.gz
+    - name: upload release asset (Darwin)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_path: ./snifos.gz
+        asset_name: snifos.x86_64-apple-darwin.gz
+        asset_content_type: application/gzip
